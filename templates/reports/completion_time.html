@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "reports/_header.html" %}
+{% include "reports/_filter_bar.html" with hide_status=1 %}
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card">
+      <div class="stat-icon tint-success"><i class="bi bi-stopwatch"></i></div>
+      <div><div class="stat-value">{{ data.overall_avg|default_if_none:"—" }}</div><div class="stat-label">Avg days overall</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card">
+      <div class="stat-icon tint-primary"><i class="bi bi-check2-circle"></i></div>
+      <div><div class="stat-value">{{ data.total_completed }}</div><div class="stat-label">Completed jobs</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-tags"></i> By category</div>
+      {% if data.by_category %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Category</th><th>Completed</th><th>Avg days</th></tr></thead>
+          <tbody>
+            {% for r in data.by_category %}
+            <tr><td>{{ r.label }}</td><td class="fw-num">{{ r.count }}</td><td class="fw-num">{{ r.avg_days }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<div class="empty-state py-4"><i class="bi bi-inbox"></i><div class="h6">No data</div></div>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-flag"></i> By priority</div>
+      {% if data.by_priority %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Priority</th><th>Completed</th><th>Avg days</th></tr></thead>
+          <tbody>
+            {% for r in data.by_priority %}
+            <tr><td>{{ r.label|capfirst }}</td><td class="fw-num">{{ r.count }}</td><td class="fw-num">{{ r.avg_days }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<div class="empty-state py-4"><i class="bi bi-inbox"></i><div class="h6">No data</div></div>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

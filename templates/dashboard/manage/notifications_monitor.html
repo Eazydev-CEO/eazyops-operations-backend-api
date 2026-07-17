@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Notification monitor{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Notification monitor</h1>
+    <div class="sub">Delivery overview across all users</div>
+  </div>
+  <div class="actions">
+    <form method="get" class="js-auto-submit">
+      <select name="type" class="form-select form-select-sm" aria-label="Type filter">
+        <option value="">All types</option>
+        {% for value, label in types %}<option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="stat-icon tint-primary"><i class="bi bi-bell"></i></div><div><div class="stat-value">{{ stats.total_30d }}</div><div class="stat-label">Sent (30d)</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="stat-icon tint-warning"><i class="bi bi-envelope-open"></i></div><div><div class="stat-value">{{ stats.unread }}</div><div class="stat-label">Currently unread</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="stat-icon tint-info"><i class="bi bi-envelope-check"></i></div><div><div class="stat-value">{{ stats.emailed_30d }}</div><div class="stat-label">Emailed (30d)</div></div></div></div>
+</div>
+
+<div class="card">
+  {% if notifications %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>When</th><th>User</th><th>Type</th><th>Title</th><th>Read</th><th>Email</th></tr></thead>
+      <tbody>
+        {% for n in notifications %}
+        <tr>
+          <td class="fw-num" style="white-space:nowrap">{{ n.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ n.user.email }}</td>
+          <td><span class="tag-chip">{{ n.get_type_display }}</span></td>
+          <td class="text-truncate" style="max-width:300px">{{ n.title }}</td>
+          <td>{% if n.is_read %}<i class="bi bi-check2 text-success"></i>{% else %}<i class="bi bi-dot" style="color:var(--ez-text-muted)"></i>{% endif %}</td>
+          <td>{% if n.email_sent %}<i class="bi bi-envelope-check text-success"></i>{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-broadcast"></i><div class="h6">No notifications</div><p class="mb-0">Platform notifications will appear here.</p></div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

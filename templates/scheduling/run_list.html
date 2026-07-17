@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}Scheduler monitor{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Scheduler monitor</h1>
+    <div class="sub">Every scheduler pass is logged here — cron or manual</div>
+  </div>
+  <div class="actions">
+    <form method="post" action="{% url 'scheduling:run_now' %}" data-confirm="Run a scheduler pass now?">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-lightning-charge me-1"></i> Run now</button>
+    </form>
+  </div>
+</div>
+
+{% if failed_tasks %}
+<div class="card mb-3">
+  <div class="card-header text-danger"><i class="bi bi-exclamation-triangle"></i> Tasks with failures</div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Task</th><th>Failures</th><th>Last error</th></tr></thead>
+      <tbody>
+        {% for t in failed_tasks %}
+        <tr>
+          <td><a class="row-link" href="{{ t.get_absolute_url }}">{{ t.name }}</a></td>
+          <td class="fw-num">{{ t.failure_count }}</td>
+          <td class="small mono text-truncate" style="max-width:420px">{{ t.last_error|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  {% if runs %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Run</th><th>Started</th><th>Duration</th><th>Trigger</th><th>Tasks</th><th>Occurrences</th><th>Jobs</th><th>Missed</th><th>Overdue</th><th>Errors</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for r in runs %}
+        <tr>
+          <td><a class="row-link" href="{% url 'scheduling:run_detail' r.pk %}">#{{ r.pk }}</a></td>
+          <td class="fw-num">{{ r.started_at|date:"Y-m-d H:i:s" }}</td>
+          <td class="fw-num">{% if r.duration_seconds is not None %}{{ r.duration_seconds|floatformat:1 }}s{% else %}—{% endif %}</td>
+          <td class="small">{{ r.get_triggered_by_display }}{% if r.triggered_by_user %} · {{ r.triggered_by_user.display_name }}{% endif %}</td>
+          <td class="fw-num">{{ r.tasks_processed }}</td>
+          <td class="fw-num">{{ r.occurrences_created }}</td>
+          <td class="fw-num">{{ r.jobs_created }}</td>
+          <td class="fw-num">{{ r.occurrences_missed }}</td>
+          <td class="fw-num">{{ r.jobs_marked_overdue }}</td>
+          <td class="fw-num">{% if r.errors_count %}<span class="chip chip-danger">{{ r.errors_count }}</span>{% else %}0{% endif %}</td>
+          <td><span class="chip chip-{{ r.status|status_badge }}">{{ r.get_status_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-cpu"></i>
+    <div class="h6">No scheduler runs yet</div>
+    <p class="mb-0">Run <code>python manage.py run_scheduler</code> or press <em>Run now</em>.</p>
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

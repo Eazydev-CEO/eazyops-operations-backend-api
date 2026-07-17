@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "reports/_header.html" %}
+{% include "reports/_filter_bar.html" %}
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-pie-chart"></i> Distribution</div>
+      <div class="card-body">
+        <div class="chart-box">
+          <canvas data-chart data-src="#report-chart-data" data-type="doughnut" aria-label="{{ title }} chart" role="img"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-table"></i> Breakdown</div>
+      {% if rows %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>{{ title|cut:"Jobs by "|capfirst }}</th><th>Jobs</th>{% if show_completed %}<th>Completed</th>{% endif %}<th style="width:40%">Share</th></tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td><span class="chip" style="background:{{ r.color }}22; color:{{ r.color }}; border-color:{{ r.color }}55">{{ r.label }}</span></td>
+              <td class="fw-num">{{ r.count }}</td>
+              {% if show_completed %}<td class="fw-num">{{ r.completed }}</td>{% endif %}
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-fill"><div class="progress-bar" style="width:{{ r.count|percent_of:total_count }}%; background:{{ r.color }}"></div></div>
+                  <span class="small fw-num" style="min-width:38px">{{ r.count|percent_of:total_count }}%</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-inbox"></i><div class="h6">No data</div><p class="mb-0">Nothing matches the current filters.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="report-chart-data">{{ chart|safe }}</script>
+{% endblock %}

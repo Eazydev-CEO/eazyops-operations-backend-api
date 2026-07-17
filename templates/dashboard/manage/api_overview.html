@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}API access{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>API access overview</h1>
+    <div class="sub">Versioned REST API with JWT authentication</div>
+  </div>
+  <div class="actions">
+    <a href="/api/docs/" target="_blank" rel="noopener" class="btn btn-primary btn-sm"><i class="bi bi-filetype-json me-1"></i> Open Swagger UI</a>
+    <a href="/api/redoc/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">ReDoc</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="stat-icon tint-primary"><i class="bi bi-key"></i></div><div><div class="stat-value">{{ access_lifetime }}</div><div class="stat-label">Access token life</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="stat-icon tint-info"><i class="bi bi-arrow-repeat"></i></div><div><div class="stat-value">{{ refresh_lifetime }}</div><div class="stat-label">Refresh token life</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="stat-icon tint-warning"><i class="bi bi-speedometer2"></i></div><div><div class="stat-value">{{ throttles.auth }}</div><div class="stat-label">Auth throttle (per IP)</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat-card"><div class="stat-icon tint-purple"><i class="bi bi-speedometer"></i></div><div><div class="stat-value">{{ throttles.user }}</div><div class="stat-label">User rate limit</div></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><i class="bi bi-diagram-3"></i> Resources (v1)</div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Endpoint</th><th>Purpose</th><th>Access</th></tr></thead>
+      <tbody>
+        {% for endpoint, purpose, access in resources %}
+        <tr>
+          <td class="mono small">{{ endpoint }}</td>
+          <td>{{ purpose }}</td>
+          <td class="small" style="color:var(--ez-text-muted)">{{ access }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-header"><i class="bi bi-terminal"></i> Quick start</div>
+  <div class="card-body">
+    <pre class="log-box mb-0">« obtain a token »
+curl -X POST {{ request.scheme }}://{{ request.get_host }}/api/v1/auth/token/ \
+     -H "Content-Type: application/json" \
+     -d '{"email": "you@company.com", "password": "********"}'
+
+« call the API »
+curl {{ request.scheme }}://{{ request.get_host }}/api/v1/jobs/?status=OVERDUE \
+     -H "Authorization: Bearer &lt;access-token&gt;"</pre>
+  </div>
+</div>
+{% endblock %}

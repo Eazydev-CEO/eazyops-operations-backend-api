@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}Scheduled tasks{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Scheduled tasks</h1>
+    <div class="sub">Recurring and one-time work generated automatically by the scheduler</div>
+  </div>
+  <div class="actions">
+    {% if nav_can.schedules_manage %}
+    <a href="{% url 'scheduling:runs' %}" class="btn btn-ghost btn-sm"><i class="bi bi-cpu me-1"></i> Scheduler monitor</a>
+    <a href="{% url 'scheduling:task_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New scheduled task</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if failed_tasks %}
+<div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <div><strong>{{ failed_tasks }}</strong> scheduled task{{ failed_tasks|pluralize }} reporting failures — check the list below.</div>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-body py-3 filter-bar">
+    <form method="get" class="row g-2 js-auto-submit">
+      <div class="col-12 col-md-4">
+        <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="Search tasks…" aria-label="Search scheduled tasks">
+      </div>
+      <div class="col-6 col-md-3">
+        <select name="status" class="form-select" aria-label="Status">
+          <option value="">All statuses</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <select name="frequency" class="form-select" aria-label="Frequency">
+          <option value="">All frequencies</option>
+          {% for value, label in frequencies %}<option value="{{ value }}" {% if filters.frequency == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2 d-grid">
+        <button class="btn btn-ghost" type="submit"><i class="bi bi-funnel me-1"></i> Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  {% if tasks %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Task</th><th>Frequency</th><th>Action</th><th>Next run</th><th>Last run</th><th>Pending</th><th>Status</th><th>Health</th></tr>
+      </thead>
+      <tbody>
+        {% for t in tasks %}
+        <tr>
+          <td>
+            <a class="row-link" href="{{ t.get_absolute_url }}">{{ t.name }}</a>
+            {% if t.team_department %}<div class="small" style="color:var(--ez-text-muted)">Team: {{ t.team_department.name }}</div>{% endif %}
+          </td>
+          <td>{{ t.get_frequency_display }}</td>
+          <td class="small">{% if t.action == "CREATE_JOB" %}<i class="bi bi-briefcase me-1"></i>Creates job{% else %}<i class="bi bi-check2-square me-1"></i>Checklist{% endif %}</td>
+          <td class="fw-num">{{ t.next_run_at|date:"Y-m-d H:i"|default:"—" }}</td>
+          <td class="fw-num">{{ t.last_run_at|date:"Y-m-d H:i"|default:"never" }}</td>
+          <td class="fw-num">{{ t.pending_count }}</td>
+          <td><span class="chip chip-{{ t.status|status_badge }}">{{ t.get_status_display }}</span></td>
+          <td>
+            {% if t.failure_count %}
+            <span class="chip chip-danger" title="{{ t.last_error }}">{{ t.failure_count }} failure{{ t.failure_count|pluralize }}</span>
+            {% else %}<span class="chip chip-success">OK</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-calendar-week"></i>
+    <div class="h6">No scheduled tasks</div>
+    <p class="mb-2">Automate recurring work — daily checks, weekly maintenance, monthly reports.</p>
+    {% if nav_can.schedules_manage %}<a href="{% url 'scheduling:task_create' %}" class="btn btn-primary btn-sm">Create the first one</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

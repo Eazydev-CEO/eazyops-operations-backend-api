@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Job categories{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Job categories</h1>
+    <div class="sub">Configuration for classifying operational work</div>
+  </div>
+  <div class="actions">
+    <a href="{% url 'operations:manage_category_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New category</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if categories %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Name</th><th>Description</th><th>Colour</th><th>Jobs</th><th>Status</th><th class="text-end"></th></tr></thead>
+      <tbody>
+        {% for c in categories %}
+        <tr>
+          <td class="fw-semibold">{{ c.name }}</td>
+          <td class="text-truncate" style="max-width:320px; color:var(--ez-text-muted)">{{ c.description|default:"—" }}</td>
+          <td><span class="d-inline-block rounded" style="width:22px;height:14px;background:{{ c.color }}"></span> <span class="mono small">{{ c.color }}</span></td>
+          <td class="fw-num">{{ c.job_count }}</td>
+          <td>{% if c.is_active %}<span class="chip chip-success">Active</span>{% else %}<span class="chip chip-dark">Inactive</span>{% endif %}</td>
+          <td class="text-end"><a href="{% url 'operations:manage_category_edit' c.pk %}" class="btn btn-ghost btn-sm py-1 px-2"><i class="bi bi-pencil"></i></a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-tags"></i>
+    <div class="h6">No categories yet</div>
+    <p class="mb-2">Create categories so jobs can be classified and reported on.</p>
+    <a href="{% url 'operations:manage_category_create' %}" class="btn btn-primary btn-sm">New category</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

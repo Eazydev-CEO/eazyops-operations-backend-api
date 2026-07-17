@@ -1,0 +1,28 @@
+{% extends "base_auth.html" %}
+{% block title %}Accept invitation{% endblock %}
+{% block content %}
+<h1 class="h5 mb-1">You're invited 🎉</h1>
+<p class="mb-3" style="color:var(--ez-text-muted); font-size:.85rem">
+  Create your <strong>{{ invitation.get_role_display }}</strong> account for
+  <strong>{{ invitation.email }}</strong>{% if invitation.department %} in {{ invitation.department.name }}{% endif %}.
+</p>
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger py-2">{% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}</div>
+{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-6">{% include "partials/form_field.html" with field=form.first_name %}</div>
+    <div class="col-6">{% include "partials/form_field.html" with field=form.last_name %}</div>
+  </div>
+  {% include "partials/form_field.html" with field=form.phone %}
+  {% include "partials/form_field.html" with field=form.password1 %}
+  {% include "partials/form_field.html" with field=form.password2 %}
+  <button type="submit" class="btn btn-primary w-100 mt-2"><i class="bi bi-person-check me-1"></i> Create account</button>
+</form>
+<p class="small text-center mt-3 mb-0" style="color:var(--ez-text-muted)">
+  Link expires {{ invitation.expires_at|date:"Y-m-d H:i" }} UTC
+</p>
+{% endblock %}

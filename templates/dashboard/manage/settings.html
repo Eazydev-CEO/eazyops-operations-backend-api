@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}System settings{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>System settings</h1>
+    <div class="sub">Runtime configuration — changes apply immediately and are audited</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th style="width:240px">Setting</th><th>Description</th><th style="width:150px">Value</th><th style="width:110px"></th></tr></thead>
+      <tbody>
+        {% for s in settings_rows %}
+        <tr data-setting-row="{{ s.key }}">
+          <td><span class="mono small">{{ s.key }}</span></td>
+          <td class="small" style="color:var(--ez-text-muted)">{{ s.description }} <span class="tag-chip ms-1">default: {{ s.default }}</span></td>
+          <td><input type="text" class="form-control form-control-sm js-setting-input" value="{{ s.value }}" aria-label="Value for {{ s.key }}"></td>
+          <td class="text-end">
+            <button type="button" class="btn btn-primary btn-sm js-setting-save" data-key="{{ s.key }}">Save</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

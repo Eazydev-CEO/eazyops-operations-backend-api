@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Departments{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Departments &amp; clients</h1>
+    <div class="sub">Jobs belong to a department; viewer accounts are scoped to theirs</div>
+  </div>
+  <div class="actions">
+    <a href="{% url 'operations:manage_department_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New department</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if departments %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Name</th><th>Type</th><th>Contact</th><th>Members</th><th>Jobs</th><th>Status</th><th class="text-end"></th></tr></thead>
+      <tbody>
+        {% for d in departments %}
+        <tr>
+          <td class="fw-semibold">{{ d.name }}</td>
+          <td><span class="chip {% if d.kind == 'CLIENT' %}chip-purple{% else %}chip-info{% endif %}">{{ d.get_kind_display }}</span></td>
+          <td>{{ d.contact_email|default:"—" }}</td>
+          <td class="fw-num">{{ d.member_count }}</td>
+          <td class="fw-num">{{ d.job_count }}</td>
+          <td>{% if d.is_active %}<span class="chip chip-success">Active</span>{% else %}<span class="chip chip-dark">Inactive</span>{% endif %}</td>
+          <td class="text-end"><a href="{% url 'operations:manage_department_edit' d.pk %}" class="btn btn-ghost btn-sm py-1 px-2"><i class="bi bi-pencil"></i></a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-building"></i>
+    <div class="h6">No departments yet</div>
+    <p class="mb-2">Create internal departments and client organisations.</p>
+    <a href="{% url 'operations:manage_department_create' %}" class="btn btn-primary btn-sm">New department</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

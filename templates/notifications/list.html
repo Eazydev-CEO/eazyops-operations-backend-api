@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Notifications</h1>
+    <div class="sub">{{ unread_count }} unread</div>
+  </div>
+  <div class="actions">
+    <div class="btn-group btn-group-sm">
+      <a href="{% url 'notifications:list' %}" class="btn btn-ghost {% if show != 'unread' %}active{% endif %}">All</a>
+      <a href="?show=unread" class="btn btn-ghost {% if show == 'unread' %}active{% endif %}">Unread</a>
+    </div>
+    {% if unread_count %}
+    <form method="post" action="{% url 'notifications:mark_all_read' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2-all me-1"></i> Mark all read</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  {% if notifications %}
+  <div class="notif-list" style="max-height:none">
+    {% for n in notifications %}
+    <div class="notif-item {% if not n.is_read %}unread{% endif %}">
+      <div class="flex-grow-1">
+        <div class="title">{{ n.title }}</div>
+        {% if n.message %}<div class="small mt-1" style="color:var(--ez-text-muted)">{{ n.message }}</div>{% endif %}
+        <div class="meta mt-1">{{ n.get_type_display }} · {{ n.created_at|date:"Y-m-d H:i" }}{% if n.email_sent %} · <i class="bi bi-envelope-check" title="Email sent"></i>{% endif %}</div>
+      </div>
+      <div class="d-flex flex-column gap-1 align-items-end">
+        {% if n.url %}<a href="{{ n.url }}" class="btn btn-ghost btn-sm py-0 px-2" title="Open"><i class="bi bi-box-arrow-up-right"></i></a>{% endif %}
+        {% if not n.is_read %}
+        <form method="post" action="{% url 'notifications:mark_read' n.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="btn btn-ghost btn-sm py-0 px-2" title="Mark read"><i class="bi bi-check2"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-bell-slash"></i>
+    <div class="h6">No notifications</div>
+    <p class="mb-0">Assignments, reviews, due-date alerts and scheduler events will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

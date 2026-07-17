@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Jobs</h1>
+    <div class="sub">{{ page_obj.paginator.count }} job{{ page_obj.paginator.count|pluralize }} in view</div>
+  </div>
+  <div class="actions">
+    {% if nav_can.jobs_create %}
+    <a href="{% url 'operations:jobs_export' %}?{{ querystring }}" class="btn btn-ghost btn-sm"><i class="bi bi-download me-1"></i> Export CSV</a>
+    <a href="{% url 'operations:job_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New job</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-3 filter-bar">
+    <form method="get" class="row g-2">
+      <div class="col-12 col-lg-3">
+        <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="Search number, title, tag…" aria-label="Search jobs">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <select name="status" class="form-select" aria-label="Status">
+          <option value="">All statuses</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <select name="priority" class="form-select" aria-label="Priority">
+          <option value="">All priorities</option>
+          {% for value, label in priorities %}<option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <select name="category" class="form-select" aria-label="Category">
+          <option value="">All categories</option>
+          {% for c in categories %}<option value="{{ c.pk }}" {% if filters.category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <select name="department" class="form-select" aria-label="Department">
+          <option value="">All departments</option>
+          {% for d in departments %}<option value="{{ d.pk }}" {% if filters.department == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-lg-1 d-grid">
+        <button class="btn btn-primary" type="submit" title="Apply filters"><i class="bi bi-funnel"></i></button>
+      </div>
+
+      <div class="col-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1">Due from</label>
+        <input type="date" name="due_from" value="{{ filters.due_from }}" class="form-control">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1">Due to</label>
+        <input type="date" name="due_to" value="{{ filters.due_to }}" class="form-control">
+      </div>
+      {% if staff_users %}
+      <div class="col-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1">Assigned staff</label>
+        <select name="staff" class="form-select">
+          <option value="">Anyone</option>
+          {% for s in staff_users %}<option value="{{ s.pk }}" {% if filters.staff == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.display_name }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1">Sort by</label>
+        <select name="sort" class="form-select">
+          <option value="created" {% if filters.sort == "created" %}selected{% endif %}>Newest first</option>
+          <option value="created_asc" {% if filters.sort == "created_asc" %}selected{% endif %}>Oldest first</option>
+          <option value="due" {% if filters.sort == "due" %}selected{% endif %}>Due date ↑</option>
+          <option value="due_desc" {% if filters.sort == "due_desc" %}selected{% endif %}>Due date ↓</option>
+          <option value="number" {% if filters.sort == "number" %}selected{% endif %}>Job number</option>
+          <option value="title" {% if filters.sort == "title" %}selected{% endif %}>Title</option>
+        </select>
+      </div>
+      <div class="col-12 col-lg-2 d-flex align-items-end">
+        <a href="{% url 'operations:job_list' %}" class="btn btn-ghost w-100"><i class="bi bi-x-lg me-1"></i> Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  {% if jobs %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Job</th><th>Category</th><th>Priority</th><th>Status</th>
+          <th>Department</th><th>Assigned</th><th>Due</th><th class="text-end">Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr>
+          <td>
+            <a class="row-link" href="{{ job.get_absolute_url }}">{{ job.number }}</a>
+            <div class="small text-truncate" style="color:var(--ez-text-muted); max-width:260px">{{ job.title }}</div>
+          </td>
+          <td><span class="tag-chip" style="border-color:{{ job.category.color }}55; color:{{ job.category.color }}">{{ job.category.name }}</span></td>
+          <td><span class="chip chip-{{ job.priority|priority_badge }}">{{ job.get_priority_display }}</span></td>
+          <td><span class="chip chip-{{ job.effective_status|status_badge }}">{{ job.effective_status.label }}</span></td>
+          <td>{{ job.department.name }}</td>
+          <td>
+            {% with count=job.assignments.all|length %}
+              {% if count %}
+                <span title="{% for a in job.assignments.all %}{{ a.staff.display_name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                  {{ count }} staff
+                </span>
+              {% else %}<span style="color:var(--ez-text-muted)">—</span>{% endif %}
+            {% endwith %}
+          </td>
+          <td class="fw-num {% if job.is_overdue %}text-danger fw-semibold{% endif %}">{{ job.due_date|date:"Y-m-d"|default:"—" }}</td>
+          <td class="fw-num text-end">{{ job.created_at|date:"Y-m-d" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-briefcase"></i>
+    <div class="h6">No jobs match</div>
+    <p class="mb-2">Try adjusting the filters{% if nav_can.jobs_create %} or create the first job{% endif %}.</p>
+    {% if nav_can.jobs_create %}<a href="{% url 'operations:job_create' %}" class="btn btn-primary btn-sm">Create job</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

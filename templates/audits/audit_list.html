@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Audit trail{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Audit trail</h1>
+    <div class="sub">Immutable record of every sensitive action ({{ page_obj.paginator.count }} entries in view)</div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-3 filter-bar">
+    <form method="get" class="row g-2">
+      <div class="col-12 col-md-3">
+        <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="Search object, email, id…" aria-label="Search audit log">
+      </div>
+      <div class="col-6 col-md-3">
+        <select name="action" class="form-select" aria-label="Action">
+          <option value="">All actions</option>
+          {% for value, label in actions %}<option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <input type="text" name="actor" value="{{ filters.actor }}" class="form-control" placeholder="Actor email" aria-label="Actor email">
+      </div>
+      <div class="col-6 col-md-2">
+        <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control" aria-label="From date">
+      </div>
+      <div class="col-6 col-md-1">
+        <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control" aria-label="To date">
+      </div>
+      <div class="col-12 col-md-1 d-grid">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-funnel"></i></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  {% if entries %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Object</th><th>Changes</th><th>IP</th></tr></thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="fw-num" style="white-space:nowrap">{{ e.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td>{{ e.actor_email|default:"system" }}</td>
+          <td><span class="tag-chip">{{ e.get_action_display }}</span></td>
+          <td class="text-truncate" style="max-width:240px">
+            <span class="small" style="color:var(--ez-text-muted)">{{ e.object_type }}{% if e.object_id %}#{{ e.object_id }}{% endif %}</span><br>
+            {{ e.object_repr }}
+          </td>
+          <td style="max-width:320px">
+            {% if e.changes %}
+              {% for field, pair in e.changes.items %}
+              <div class="small"><span class="mono">{{ field }}</span>: <span style="color:var(--ez-text-muted)">{{ pair.0|default:"—" }}</span> → <strong>{{ pair.1|default:"—" }}</strong></div>
+              {% endfor %}
+            {% else %}<span style="color:var(--ez-text-muted)">—</span>{% endif %}
+          </td>
+          <td class="fw-num">{{ e.ip_address|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-shield-check"></i>
+    <div class="h6">No audit entries match</div>
+    <p class="mb-0">Adjust the filters above.</p>
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

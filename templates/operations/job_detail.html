@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}{{ job.number }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <h1>{{ job.number }}</h1>
+      <span class="chip chip-{{ job.effective_status|status_badge }}">{{ job.effective_status.label }}</span>
+      <span class="chip chip-{{ job.priority|priority_badge }}">{{ job.get_priority_display }}</span>
+    </div>
+    <div class="sub">{{ job.title }}</div>
+  </div>
+  <div class="actions">
+    {% if can_edit %}
+    <a href="{% url 'operations:job_edit' job.pk %}" class="btn btn-ghost btn-sm"><i class="bi bi-pencil me-1"></i> Edit</a>
+    {% endif %}
+    {% for target in allowed_transitions %}
+    <form method="post" action="{% url 'operations:job_transition' job.pk %}" class="d-inline"
+          {% if target == "CANCELLED" %}data-confirm="Cancel job {{ job.number }}? This cannot be undone."{% endif %}>
+      {% csrf_token %}
+      <input type="hidden" name="status" value="{{ target }}">
+      <button type="submit" class="btn btn-sm {% if target == 'COMPLETED' %}btn-primary{% elif target == 'CANCELLED' %}btn-ghost text-danger{% else %}btn-primary{% endif %}">
+        {% if target == "OPEN" and job.status == "DRAFT" %}<i class="bi bi-megaphone me-1"></i> Publish
+        {% elif target == "IN_PROGRESS" and job.status == "AWAITING_REVIEW" %}<i class="bi bi-arrow-counterclockwise me-1"></i> Reject / rework
+        {% elif target == "IN_PROGRESS" %}<i class="bi bi-play me-1"></i> Start work
+        {% elif target == "AWAITING_REVIEW" %}<i class="bi bi-send-check me-1"></i> Submit for review
+        {% elif target == "COMPLETED" %}<i class="bi bi-check2-circle me-1"></i> Approve &amp; complete
+        {% elif target == "CANCELLED" %}<i class="bi bi-x-circle me-1"></i> Cancel
+        {% else %}{{ target }}{% endif %}
+      </button>
+    </form>
+    {% endfor %}
+    {% if can_delete %}
+    <form method="post" action="{% url 'operations:job_delete' job.pk %}" class="d-inline"
+          data-confirm="Permanently delete {{ job.number }}? The audit trail is kept, the job is not recoverable.">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost btn-sm text-danger"><i class="bi bi-trash me-1"></i> Delete</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if job.status == "AWAITING_REVIEW" and nav_can.jobs_create %}
+<div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+  <i class="bi bi-hourglass-split"></i>
+  <div>Submitted for review {{ job.submitted_for_review_at|date:"Y-m-d H:i" }} — approve to complete, or send back for rework with a note below.</div>
+</div>
+{% endif %}
+{% if job.review_note %}
+<div class="alert alert-info d-flex align-items-center gap-2" role="alert">
+  <i class="bi bi-chat-quote"></i>
+  <div><strong>Review note</strong> ({{ job.reviewed_by.display_name }}, {{ job.reviewed_at|date:"Y-m-d H:i" }}): {{ job.review_note }}</div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <!-- Details -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-info-circle"></i> Details</div>
+      <div class="card-body">
+        {% if job.description %}<p style="white-space:pre-line">{{ job.description }}</p><hr style="border-color:var(--ez-border)">{% endif %}
+        <div class="row">
+          <div class="col-md-6">
+            <dl class="kv">
+              <dt>Category</dt><dd><span class="tag-chip" style="border-color:{{ job.category.color }}55; color:{{ job.category.color }}">{{ job.category.name }}</span></dd>
+              <dt>Department</dt><dd>{{ job.department.name }} <span class="small" style="color:var(--ez-text-muted)">({{ job.department.get_kind_display }})</span></dd>
+              <dt>Manager</dt><dd>{{ job.manager.display_name }}</dd>
+              <dt>Created by</dt><dd>{{ job.created_by.display_name|default:"—" }} · {{ job.created_at|date:"Y-m-d H:i" }}</dd>
+              <dt>Tags</dt><dd>{% for t in job.tags.all %}<span class="tag-chip me-1">{{ t.name }}</span>{% empty %}—{% endfor %}</dd>
+            </dl>
+          </div>
+          <div class="col-md-6">
+            <dl class="kv">
+              <dt>Start date</dt><dd class="fw-num">{{ job.start_date|date:"Y-m-d"|default:"—" }}</dd>
+              <dt>Due date</dt><dd class="fw-num {% if job.is_overdue %}text-danger fw-semibold{% endif %}">{{ job.due_date|date:"Y-m-d"|default:"—" }}{% if job.is_overdue %} (overdue){% endif %}</dd>
+              <dt>Completed</dt><dd class="fw-num">{{ job.completed_at|date:"Y-m-d H:i"|default:"—" }}</dd>
+              <dt>Estimated cost</dt><dd class="fw-num">{% if job.estimated_cost is not None %}{{ job.estimated_cost }}{% else %}—{% endif %}</dd>
+              <dt>Actual cost</dt><dd class="fw-num">{% if job.actual_cost is not None %}{{ job.actual_cost }}{% else %}—{% endif %}
+                {% if job.cost_variance is not None %}
+                  <span class="chip {% if job.cost_variance > 0 %}chip-danger{% else %}chip-success{% endif %} ms-1">{{ job.cost_variance }}</span>
+                {% endif %}
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comments & progress -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-chat-dots"></i> Comments &amp; progress updates
+        <span class="ms-auto small" style="color:var(--ez-text-muted)">{{ comments|length }}</span>
+      </div>
+      <div class="card-body">
+        {% for c in comments %}
+        <div class="d-flex gap-2 mb-3">
+          <span class="ez-avatar" style="width:32px;height:32px;font-size:.72rem">{{ c.author|initials }}</span>
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <strong class="small">{{ c.author.display_name|default:"Removed user" }}</strong>
+              {% if c.kind == "PROGRESS" %}<span class="chip chip-info">Progress</span>{% endif %}
+              <span class="small" style="color:var(--ez-text-muted)">{{ c.created_at|date:"Y-m-d H:i" }}</span>
+            </div>
+            <div class="small mt-1" style="white-space:pre-line">{{ c.body }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-state py-3">
+          <i class="bi bi-chat"></i>
+          <div class="h6">No comments yet</div>
+          <p class="small mb-0">Progress updates and discussion will appear here.</p>
+        </div>
+        {% endfor %}
+
+        {% if can_progress %}
+        <hr style="border-color:var(--ez-border)">
+        <form method="post" action="{% url 'operations:job_comment' job.pk %}" novalidate>
+          {% csrf_token %}
+          <div class="row g-2">
+            <div class="col-md-3">{{ comment_form.kind|add_class:"form-select" }}</div>
+            <div class="col-md-9">{{ comment_form.body|add_class:"form-control" }}</div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm mt-2"><i class="bi bi-send me-1"></i> Post</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Attachments -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-paperclip"></i> Attachments
+        <span class="ms-auto small" style="color:var(--ez-text-muted)">{{ attachments|length }}</span>
+      </div>
+      <div class="card-body">
+        {% if attachments %}
+        <div class="table-wrap mb-2">
+          <table class="table">
+            <thead><tr><th>File</th><th>Size</th><th>Uploaded by</th><th>When</th><th class="text-end"></th></tr></thead>
+            <tbody>
+              {% for a in attachments %}
+              <tr>
+                <td><i class="bi bi-file-earmark me-1"></i><a href="{% url 'operations:attachment_download' a.pk %}">{{ a.original_name }}</a></td>
+                <td class="fw-num">{{ a.size_display }}</td>
+                <td>{{ a.uploaded_by.display_name|default:"—" }}</td>
+                <td class="fw-num">{{ a.created_at|date:"Y-m-d H:i" }}</td>
+                <td class="text-end">
+                  {% if can_edit or a.uploaded_by_id == user.pk %}
+                  <form method="post" action="{% url 'operations:attachment_delete' a.pk %}" class="d-inline" data-confirm="Delete {{ a.original_name }}?">
+                    {% csrf_token %}
+                    <button class="btn btn-ghost btn-sm py-0 px-2" type="submit" title="Delete"><i class="bi bi-trash text-danger"></i></button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state py-3">
+          <i class="bi bi-cloud-upload"></i>
+          <div class="h6">No attachments</div>
+          <p class="small mb-0">Upload evidence, photos or documents for this job.</p>
+        </div>
+        {% endif %}
+        {% if can_progress %}
+        <form method="post" action="{% url 'operations:job_attachment_upload' job.pk %}" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-center">
+          {% csrf_token %}
+          <input type="file" name="file" class="form-control" style="max-width:340px" required aria-label="Choose file">
+          <button type="submit" class="btn btn-ghost btn-sm"><i class="bi bi-upload me-1"></i> Upload</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <!-- Assigned staff -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-people"></i> Assigned staff</div>
+      <div class="card-body">
+        {% for a in assignments %}
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="ez-avatar" style="width:30px;height:30px;font-size:.7rem">{{ a.staff|initials }}</span>
+          <div class="flex-grow-1">
+            <div class="small fw-semibold">{{ a.staff.display_name }}</div>
+            <div class="small" style="color:var(--ez-text-muted)">since {{ a.assigned_at|date:"Y-m-d" }} · by {{ a.assigned_by.display_name|default:"—" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="small" style="color:var(--ez-text-muted)">No staff assigned yet.</div>
+        {% endfor %}
+
+        {% if can_assign %}
+        <hr style="border-color:var(--ez-border)">
+        <form method="post" action="{% url 'operations:job_assign' job.pk %}">
+          {% csrf_token %}
+          <label class="form-label">Update assignments</label>
+          {{ assign_form.staff|add_class:"form-select" }}
+          <div class="form-text">Hold Ctrl/Cmd to select multiple. Submitting replaces the current set.</div>
+          <button type="submit" class="btn btn-primary btn-sm mt-2 w-100"><i class="bi bi-person-check me-1"></i> Save assignments</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if nav_can.jobs_create and job.status == "AWAITING_REVIEW" %}
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-clipboard-check"></i> Review decision</div>
+      <div class="card-body">
+        <form method="post" action="{% url 'operations:job_transition' job.pk %}">
+          {% csrf_token %}
+          <textarea name="note" class="form-control mb-2" rows="2" placeholder="Review note (required for rejection, recommended for approval)"></textarea>
+          <div class="d-flex gap-2">
+            <button name="status" value="COMPLETED" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-check2-circle me-1"></i> Approve</button>
+            <button name="status" value="IN_PROGRESS" class="btn btn-ghost btn-sm flex-fill text-warning"><i class="bi bi-arrow-counterclockwise me-1"></i> Reject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Activity timeline -->
+    <div class="card">
+      <div class="card-header"><i class="bi bi-activity"></i> Activity timeline</div>
+      <div class="card-body">
+        {% if timeline %}
+        <div class="timeline">
+          {% for entry in timeline %}
+          <div class="timeline-item">
+            <div class="small fw-semibold">{{ entry.get_action_display }}</div>
+            {% if entry.changes.status %}
+            <div class="small" style="color:var(--ez-text-muted)">{{ entry.changes.status.0|default:"—" }} → {{ entry.changes.status.1 }}</div>
+            {% endif %}
+            <div class="when">{{ entry.actor_email|default:"system" }} · {{ entry.created_at|date:"Y-m-d H:i" }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small" style="color:var(--ez-text-muted)">No recorded activity.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

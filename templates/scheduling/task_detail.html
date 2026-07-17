@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}{{ task.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <h1>{{ task.name }}</h1>
+      <span class="chip chip-{{ task.status|status_badge }}">{{ task.get_status_display }}</span>
+    </div>
+    <div class="sub">{{ task.get_frequency_display }} · {% if task.action == "CREATE_JOB" %}creates a job each run{% else %}creates checklist occurrences{% endif %}</div>
+  </div>
+  {% if can_manage %}
+  <div class="actions">
+    <a href="{% url 'scheduling:task_edit' task.pk %}" class="btn btn-ghost btn-sm"><i class="bi bi-pencil me-1"></i> Edit</a>
+    {% if task.status == "ACTIVE" %}
+    <form method="post" action="{% url 'scheduling:task_set_status' task.pk %}" class="d-inline">
+      {% csrf_token %}<input type="hidden" name="status" value="PAUSED">
+      <button class="btn btn-ghost btn-sm"><i class="bi bi-pause me-1"></i> Pause</button>
+    </form>
+    {% elif task.status == "PAUSED" %}
+    <form method="post" action="{% url 'scheduling:task_set_status' task.pk %}" class="d-inline">
+      {% csrf_token %}<input type="hidden" name="status" value="ACTIVE">
+      <button class="btn btn-primary btn-sm"><i class="bi bi-play me-1"></i> Resume</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if task.failure_count %}
+<div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+  <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+  <div>
+    <strong>{{ task.failure_count }} failure{{ task.failure_count|pluralize }} recorded.</strong>
+    {% if task.last_error %}<div class="small mono mt-1">{{ task.last_error }}</div>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-gear"></i> Configuration</div>
+      <div class="card-body">
+        {% if task.description %}<p class="small" style="white-space:pre-line">{{ task.description }}</p><hr style="border-color:var(--ez-border)">{% endif %}
+        <dl class="kv">
+          <dt>Frequency</dt><dd>{{ task.get_frequency_display }}</dd>
+          {% if task.time_of_day %}<dt>Time (UTC)</dt><dd class="fw-num">{{ task.time_of_day }}</dd>{% endif %}
+          {% if task.frequency == "WEEKLY" %}<dt>Weekday</dt><dd>{{ task.get_weekday_display }}</dd>{% endif %}
+          {% if task.frequency == "MONTHLY" %}<dt>Day of month</dt><dd class="fw-num">{{ task.day_of_month }}</dd>{% endif %}
+          {% if task.frequency == "INTERVAL" %}<dt>Every</dt><dd class="fw-num">{{ task.interval_minutes }} minutes</dd>{% endif %}
+          <dt>Starts</dt><dd class="fw-num">{{ task.starts_at|date:"Y-m-d H:i" }}</dd>
+          <dt>Ends</dt><dd class="fw-num">{{ task.ends_at|date:"Y-m-d H:i"|default:"—" }}</dd>
+          <dt>Next run</dt><dd class="fw-num">{{ task.next_run_at|date:"Y-m-d H:i"|default:"—" }}</dd>
+          <dt>Last run</dt><dd class="fw-num">{{ task.last_run_at|date:"Y-m-d H:i"|default:"never" }}</dd>
+          <dt>Created by</dt><dd>{{ task.created_by.display_name|default:"—" }}</dd>
+        </dl>
+        <hr style="border-color:var(--ez-border)">
+        <div class="small fw-semibold mb-1">Assignees</div>
+        {% for u in task.assignees.all %}
+          <span class="tag-chip me-1 mb-1 d-inline-block">{{ u.display_name }}</span>
+        {% empty %}
+          {% if not task.team_department %}<span class="small" style="color:var(--ez-text-muted)">None</span>{% endif %}
+        {% endfor %}
+        {% if task.team_department %}
+          <span class="tag-chip me-1 mb-1 d-inline-block"><i class="bi bi-building me-1"></i>{{ task.team_department.name }} (team)</span>
+        {% endif %}
+        {% if task.action == "CREATE_JOB" %}
+        <hr style="border-color:var(--ez-border)">
+        <div class="small fw-semibold mb-1">Job template</div>
+        <dl class="kv">
+          <dt>Category</dt><dd>{{ task.job_category.name|default:"—" }}</dd>
+          <dt>Department</dt><dd>{{ task.job_department.name|default:"—" }}</dd>
+          <dt>Manager</dt><dd>{{ task.job_manager.display_name|default:"—" }}</dd>
+          <dt>Priority</dt><dd>{{ task.get_job_priority_display }}</dd>
+          <dt>Due after</dt><dd>{{ task.job_due_days }} day{{ task.job_due_days|pluralize }}</dd>
+        </dl>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-clock-history"></i> Occurrences <span class="ms-auto small" style="color:var(--ez-text-muted)">latest 100</span></div>
+      {% if occurrences %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Scheduled for</th><th>Assignee</th><th>Status</th><th>Completed</th><th>Job</th><th class="text-end"></th></tr></thead>
+          <tbody>
+            {% for o in occurrences %}
+            <tr>
+              <td class="fw-num">{{ o.scheduled_for|date:"Y-m-d H:i" }}</td>
+              <td>{{ o.assigned_to.display_name|default:"—" }}</td>
+              <td><span class="chip chip-{{ o.status|status_badge }}">{{ o.get_status_display }}</span></td>
+              <td class="fw-num">{{ o.completed_at|date:"Y-m-d H:i"|default:"—" }}{% if o.completed_by %} <span class="small" style="color:var(--ez-text-muted)">by {{ o.completed_by.display_name }}</span>{% endif %}</td>
+              <td>{% if o.created_job %}<a href="{{ o.created_job.get_absolute_url }}">{{ o.created_job.number }}</a>{% else %}—{% endif %}</td>
+              <td class="text-end">
+                {% if o.status == "PENDING" and can_manage or o.status == "PENDING" and o.assigned_to_id == user.pk %}
+                <form method="post" action="{% url 'scheduling:occurrence_complete' o.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="detail">
+                  <button class="btn btn-ghost btn-sm py-0 px-2" title="Mark completed"><i class="bi bi-check2 text-success"></i></button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state py-4">
+        <i class="bi bi-hourglass"></i>
+        <div class="h6">No occurrences yet</div>
+        <p class="small mb-0">The scheduler will materialise runs when they come due{% if task.next_run_at %} — next on {{ task.next_run_at|date:"Y-m-d H:i" }}{% endif %}.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{% if task %}Edit {{ task.name }}{% else %}New scheduled task{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{% if task %}Edit scheduled task{% else %}New scheduled task{% endif %}</h1>
+    <div class="sub">Times are interpreted in UTC. Requirements change with the chosen frequency.</div>
+  </div>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="row g-3">
+    <div class="col-xl-7">
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-card-text"></i> Task</div>
+        <div class="card-body">
+          {% include "partials/form_field.html" with field=form.name %}
+          {% include "partials/form_field.html" with field=form.description %}
+          {% include "partials/form_field.html" with field=form.action %}
+        </div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-arrow-repeat"></i> Recurrence</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.frequency %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.time_of_day %}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">{% include "partials/form_field.html" with field=form.weekday %}</div>
+            <div class="col-md-4">{% include "partials/form_field.html" with field=form.day_of_month %}</div>
+            <div class="col-md-4">{% include "partials/form_field.html" with field=form.interval_minutes %}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.starts_at %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.ends_at %}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-5">
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-people"></i> Assignment</div>
+        <div class="card-body">
+          {% include "partials/form_field.html" with field=form.assignees %}
+          {% include "partials/form_field.html" with field=form.team_department %}
+        </div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-briefcase"></i> Job template <span class="small ms-2" style="color:var(--ez-text-muted)">(only for "create job" tasks)</span></div>
+        <div class="card-body">
+          {% include "partials/form_field.html" with field=form.job_category %}
+          {% include "partials/form_field.html" with field=form.job_department %}
+          {% include "partials/form_field.html" with field=form.job_manager %}
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.job_priority %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.job_due_days %}</div>
+          </div>
+        </div>
+      </div>
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> {% if task %}Save changes{% else %}Create scheduled task{% endif %}</button>
+        <a href="{% if task %}{{ task.get_absolute_url }}{% else %}{% url 'scheduling:task_list' %}{% endif %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

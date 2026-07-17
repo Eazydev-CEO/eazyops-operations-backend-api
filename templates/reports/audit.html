@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "reports/_header.html" %}
+{% include "reports/_filter_bar.html" with hide_staff=1 hide_category=1 hide_status=1 hide_priority=1 %}
+
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-graph-up"></i> Events per day <span class="ms-auto small" style="color:var(--ez-text-muted)">{{ data.total }} total</span></div>
+      <div class="card-body">
+        <div class="chart-box-sm">
+          <canvas data-chart data-src="#report-chart-data" data-type="line" data-label="Events" aria-label="Audit events per day" role="img"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-list-ol"></i> Top actions</div>
+      {% if data.by_action %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Action</th><th class="text-end">Events</th></tr></thead>
+          <tbody>
+            {% for r in data.by_action %}
+            <tr><td><span class="tag-chip">{{ r.action }}</span></td><td class="fw-num text-end">{{ r.n }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<div class="empty-state py-4"><i class="bi bi-inbox"></i><div class="h6">No events</div></div>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-person-badge"></i> Most active users</div>
+      {% if data.by_user %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>User</th><th class="text-end">Events</th></tr></thead>
+          <tbody>
+            {% for r in data.by_user %}
+            <tr><td>{{ r.actor_email }}</td><td class="fw-num text-end">{{ r.n }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<div class="empty-state py-4"><i class="bi bi-inbox"></i><div class="h6">No events</div></div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="report-chart-data">{{ chart|safe }}</script>
+{% endblock %}

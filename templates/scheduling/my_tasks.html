@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}My tasks{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My tasks</h1>
+    <div class="sub">Scheduled occurrences assigned to you</div>
+  </div>
+  <div class="actions">
+    <form method="get" class="js-auto-submit">
+      <select name="status" class="form-select form-select-sm" aria-label="Status filter">
+        {% for value, label in statuses %}
+        <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  {% if occurrences %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Task</th><th>Scheduled for</th><th>Status</th><th>Linked job</th><th>Notes</th><th class="text-end"></th></tr></thead>
+      <tbody>
+        {% for o in occurrences %}
+        <tr>
+          <td>
+            <a class="row-link" href="{{ o.scheduled_task.get_absolute_url }}">{{ o.scheduled_task.name }}</a>
+            {% if o.scheduled_task.description %}<div class="small text-truncate" style="color:var(--ez-text-muted); max-width:280px">{{ o.scheduled_task.description }}</div>{% endif %}
+          </td>
+          <td class="fw-num">{{ o.scheduled_for|date:"Y-m-d H:i" }}</td>
+          <td><span class="chip chip-{{ o.status|status_badge }}">{{ o.get_status_display }}</span></td>
+          <td>{% if o.created_job %}<a href="{{ o.created_job.get_absolute_url }}">{{ o.created_job.number }}</a>{% else %}—{% endif %}</td>
+          <td class="text-truncate" style="max-width:200px">{{ o.notes|default:"—" }}</td>
+          <td class="text-end" style="min-width:220px">
+            {% if o.status == "PENDING" %}
+            <form method="post" action="{% url 'scheduling:occurrence_complete' o.pk %}" class="d-flex gap-2 justify-content-end">
+              {% csrf_token %}
+              <input type="text" name="notes" class="form-control form-control-sm" placeholder="Notes (optional)" style="max-width:160px" aria-label="Completion notes">
+              <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-check2 me-1"></i>Done</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-check2-square"></i>
+    <div class="h6">Nothing here</div>
+    <p class="mb-0">No {{ current_status|lower }} tasks — enjoy the quiet moment.</p>
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

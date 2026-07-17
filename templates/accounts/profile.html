@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}My profile{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My profile</h1>
+    <div class="sub">Your account details and preferences</div>
+  </div>
+  <div class="actions">
+    <a href="{% url 'accounts:password_change' %}" class="btn btn-ghost btn-sm"><i class="bi bi-key me-1"></i> Change password</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="ez-avatar ez-avatar-lg mx-auto mb-3">
+          {% if user.photo %}<img src="{{ user.photo.url }}" alt="Profile photo">{% else %}{{ user|initials }}{% endif %}
+        </div>
+        <div class="fw-semibold">{{ user.display_name }}</div>
+        <div class="small mb-2" style="color:var(--ez-text-muted)">{{ user.email }}</div>
+        <span class="chip chip-primary">{{ user.get_role_display }}</span>
+        <hr style="border-color:var(--ez-border)">
+        <dl class="kv text-start">
+          <dt>Department</dt><dd>{{ user.department.name|default:"—" }}</dd>
+          <dt>Job title</dt><dd>{{ user.job_title|default:"—" }}</dd>
+          <dt>Phone</dt><dd>{{ user.phone|default:"—" }}</dd>
+          <dt>Joined</dt><dd>{{ user.date_joined|date:"Y-m-d" }}</dd>
+          <dt>Last login</dt><dd>{{ user.last_login|date:"Y-m-d H:i"|default:"—" }}</dd>
+          <dt>Last activity</dt><dd>{{ user.last_activity_at|date:"Y-m-d H:i"|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-pencil-square"></i> Edit profile</div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.first_name %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.last_name %}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.phone %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.photo %}</div>
+          </div>
+          {% include "partials/form_field.html" with field=form.email_notifications %}
+          <button type="submit" class="btn btn-primary mt-2"><i class="bi bi-check-lg me-1"></i> Save changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

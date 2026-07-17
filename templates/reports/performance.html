@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "reports/_header.html" %}
+{% include "reports/_filter_bar.html" with hide_staff=1 hide_category=1 hide_status=1 hide_priority=1 %}
+
+<div class="card">
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Staff</th><th>Completed jobs</th><th>Avg completion (days)</th><th>On-time rate</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="fw-semibold">{{ r.name }}</td>
+          <td class="fw-num">{{ r.completed }}</td>
+          <td class="fw-num">{{ r.avg_days|default_if_none:"—" }}</td>
+          <td>
+            {% if r.on_time_rate is not None %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-fill" style="max-width:160px">
+                <div class="progress-bar {% if r.on_time_rate < 60 %}bg-danger{% elif r.on_time_rate < 85 %}bg-warning{% else %}bg-success{% endif %}" style="width:{{ r.on_time_rate }}%"></div>
+              </div>
+              <span class="small fw-num">{{ r.on_time_rate }}%</span>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-trophy"></i>
+    <div class="h6">No completions in range</div>
+    <p class="mb-0">Completed jobs with assignees will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

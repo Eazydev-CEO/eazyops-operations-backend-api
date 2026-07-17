@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "reports/_header.html" %}
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-bar-chart"></i> Active jobs per staff</div>
+      <div class="card-body">
+        <div class="chart-box">
+          <canvas data-chart data-src="#report-chart-data" data-type="bar" data-horizontal="1" data-label="Active jobs" aria-label="Staff workload chart" role="img"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-table"></i> Workload table</div>
+      {% if rows %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Staff</th><th>Department</th><th>Active</th><th>Urgent</th><th>Pending tasks</th></tr></thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td class="fw-semibold">{{ r.name }}</td>
+              <td>{{ r.department|default:"—" }}</td>
+              <td class="fw-num">{{ r.active_jobs }}</td>
+              <td class="fw-num">{% if r.urgent_jobs %}<span class="chip chip-danger">{{ r.urgent_jobs }}</span>{% else %}0{% endif %}</td>
+              <td class="fw-num">{{ r.pending_tasks }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-people"></i><div class="h6">No active staff</div><p class="mb-0">Invite operations staff to see workload.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="report-chart-data">{{ chart|safe }}</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "reports/_header.html" %}
+{% include "reports/_filter_bar.html" with hide_status=1 %}
+
+<div class="card">
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Job</th><th>Category</th><th>Department</th><th>Priority</th><th>Due</th><th>Days overdue</th><th>Manager</th><th>Staff</th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>
+            <a class="row-link" href="{% url 'operations:job_detail' r.id %}">{{ r.number }}</a>
+            <div class="small text-truncate" style="color:var(--ez-text-muted); max-width:220px">{{ r.title }}</div>
+          </td>
+          <td>{{ r.category }}</td>
+          <td>{{ r.department }}</td>
+          <td><span class="chip chip-{{ r.priority|priority_badge }}">{{ r.priority|capfirst }}</span></td>
+          <td class="fw-num">{{ r.due_date }}</td>
+          <td><span class="chip chip-danger">{{ r.days_overdue }}d</span></td>
+          <td>{{ r.manager }}</td>
+          <td class="text-truncate" style="max-width:180px">{{ r.staff|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-emoji-sunglasses"></i>
+    <div class="h6">Nothing overdue</div>
+    <p class="mb-0">All jobs are on schedule. Keep it up.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

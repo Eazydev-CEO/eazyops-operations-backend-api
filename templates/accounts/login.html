@@ -1,0 +1,30 @@
+{% extends "base_auth.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<h1 class="h5 mb-1">Welcome back</h1>
+<p class="mb-4" style="color:var(--ez-text-muted); font-size:.85rem">Sign in to your operations workspace.</p>
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger py-2" role="alert">
+  {% for error in form.non_field_errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% include "partials/form_field.html" with field=form.username %}
+  {% include "partials/form_field.html" with field=form.password %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button type="submit" class="btn btn-primary w-100 mt-2">
+    <i class="bi bi-box-arrow-in-right me-1"></i> Sign in
+  </button>
+</form>
+
+<div class="text-center mt-3">
+  <a href="{% url 'accounts:password_reset' %}" class="small">Forgot your password?</a>
+</div>
+<hr class="my-3" style="border-color:var(--ez-border)">
+<p class="small text-center mb-0" style="color:var(--ez-text-muted)">
+  Accounts are created by invitation only. Ask an administrator to invite you.
+</p>
+{% endblock %}

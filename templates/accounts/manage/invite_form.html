@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Invite user{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Invite a user</h1>
+    <div class="sub">They will receive an email link to create their account</div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-lg-6 col-xl-5">
+    <div class="card">
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+          {% include "partials/form_field.html" with field=form.email %}
+          {% include "partials/form_field.html" with field=form.role %}
+          {% include "partials/form_field.html" with field=form.department %}
+          {% include "partials/form_field.html" with field=form.job_title %}
+          <div class="d-flex gap-2 mt-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i> Send invitation</button>
+            <a href="{% url 'accounts:manage_invitations' %}" class="btn btn-ghost">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

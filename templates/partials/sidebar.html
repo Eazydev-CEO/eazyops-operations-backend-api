@@ -1,0 +1,104 @@
+<aside class="ez-sidebar">
+  <a class="ez-brand" href="{% url 'dashboard:home' %}">
+    <div class="ez-brand-logo">E</div>
+    <div class="ez-brand-text">Eazy<span>Ops</span></div>
+  </a>
+
+  <nav class="ez-nav">
+    <div class="ez-nav-section">Workspace</div>
+    <a class="ez-nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard:home' %}">
+      <i class="bi bi-grid-1x2"></i><span class="ez-nav-label">Dashboard</span>
+    </a>
+    <a class="ez-nav-link {% if request.path|slice:':6' == '/jobs/' and '/manage/' not in request.path %}active{% endif %}" href="{% url 'operations:job_list' %}">
+      <i class="bi bi-briefcase"></i><span class="ez-nav-label">Jobs</span>
+    </a>
+    {% if user.is_operations_staff %}
+    <a class="ez-nav-link {% if request.path == '/schedule/my-tasks/' %}active{% endif %}" href="{% url 'scheduling:my_tasks' %}">
+      <i class="bi bi-check2-square"></i><span class="ez-nav-label">My Tasks</span>
+    </a>
+    {% endif %}
+    {% if nav_can.schedules_view %}
+    <a class="ez-nav-link {% if request.path|slice:':10' == '/schedule/' and request.path != '/schedule/my-tasks/' and request.path|slice:':14' != '/schedule/runs' %}active{% endif %}" href="{% url 'scheduling:task_list' %}">
+      <i class="bi bi-calendar-week"></i><span class="ez-nav-label">Scheduled Tasks</span>
+    </a>
+    {% endif %}
+    <a class="ez-nav-link {% if request.path|slice:':15' == '/notifications/' %}active{% endif %}" href="{% url 'notifications:list' %}">
+      <i class="bi bi-bell"></i><span class="ez-nav-label">Notifications</span>
+      {% if unread_notifications_count %}<span class="badge rounded-pill text-bg-danger">{{ unread_notifications_count }}</span>{% endif %}
+    </a>
+    {% if nav_can.reports_view %}
+    <a class="ez-nav-link {% if request.path|slice:':9' == '/reports/' %}active{% endif %}" href="{% url 'reports:index' %}">
+      <i class="bi bi-bar-chart"></i><span class="ez-nav-label">Reports</span>
+    </a>
+    {% endif %}
+    {% if nav_can.audits_view %}
+    <a class="ez-nav-link {% if request.path|slice:':8' == '/audits/' %}active{% endif %}" href="{% url 'audits:list' %}">
+      <i class="bi bi-shield-check"></i><span class="ez-nav-label">Audit Trail</span>
+    </a>
+    {% endif %}
+
+    {% if nav_can.users_view or nav_can.schedules_manage or nav_can.settings_manage %}
+    <div class="ez-nav-section">Administration</div>
+    {% endif %}
+    {% if nav_can.users_view %}
+    <a class="ez-nav-link {% if '/accounts/manage/users' in request.path %}active{% endif %}" href="{% url 'accounts:manage_users' %}">
+      <i class="bi bi-people"></i><span class="ez-nav-label">Users</span>
+    </a>
+    {% endif %}
+    {% if nav_can.users_manage %}
+    <a class="ez-nav-link {% if '/accounts/manage/invitations' in request.path %}active{% endif %}" href="{% url 'accounts:manage_invitations' %}">
+      <i class="bi bi-envelope-plus"></i><span class="ez-nav-label">Invitations</span>
+    </a>
+    {% endif %}
+    {% if nav_can.categories_manage %}
+    <a class="ez-nav-link {% if '/jobs/manage/categories' in request.path %}active{% endif %}" href="{% url 'operations:manage_categories' %}">
+      <i class="bi bi-tags"></i><span class="ez-nav-label">Categories</span>
+    </a>
+    {% endif %}
+    {% if nav_can.departments_manage %}
+    <a class="ez-nav-link {% if '/jobs/manage/departments' in request.path %}active{% endif %}" href="{% url 'operations:manage_departments' %}">
+      <i class="bi bi-building"></i><span class="ez-nav-label">Departments</span>
+    </a>
+    {% endif %}
+    {% if nav_can.schedules_manage %}
+    <a class="ez-nav-link {% if request.path|slice:':14' == '/schedule/runs' %}active{% endif %}" href="{% url 'scheduling:runs' %}">
+      <i class="bi bi-cpu"></i><span class="ez-nav-label">Scheduler Monitor</span>
+    </a>
+    {% endif %}
+    {% if nav_can.notifications_monitor %}
+    <a class="ez-nav-link {% if request.path == '/manage/notifications/' %}active{% endif %}" href="{% url 'dashboard:manage_notifications' %}">
+      <i class="bi bi-broadcast"></i><span class="ez-nav-label">Notification Monitor</span>
+    </a>
+    {% endif %}
+    {% if nav_can.settings_manage %}
+    <a class="ez-nav-link {% if request.path == '/manage/settings/' %}active{% endif %}" href="{% url 'dashboard:manage_settings' %}">
+      <i class="bi bi-sliders"></i><span class="ez-nav-label">System Settings</span>
+    </a>
+    {% endif %}
+    {% if nav_can.system_health %}
+    <a class="ez-nav-link {% if request.path == '/manage/health/' %}active{% endif %}" href="{% url 'dashboard:manage_health' %}">
+      <i class="bi bi-heart-pulse"></i><span class="ez-nav-label">System Health</span>
+    </a>
+    {% endif %}
+    {% if nav_can.api_overview %}
+    <a class="ez-nav-link {% if request.path == '/manage/api/' %}active{% endif %}" href="{% url 'dashboard:manage_api' %}">
+      <i class="bi bi-plugin"></i><span class="ez-nav-label">API Access</span>
+    </a>
+    {% endif %}
+    {% if nav_can.audits_view %}
+    <a class="ez-nav-link" href="/api/docs/" target="_blank" rel="noopener">
+      <i class="bi bi-filetype-json"></i><span class="ez-nav-label">API Docs</span>
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="ez-sidebar-footer">
+    <div class="d-flex align-items-center gap-2">
+      <div class="ez-avatar">{% if user.photo %}<img src="{{ user.photo.url }}" alt="">{% else %}{% load ui_extras %}{{ user|initials }}{% endif %}</div>
+      <div class="small ez-nav-label" style="line-height:1.25; min-width:0">
+        <div class="fw-semibold text-truncate" style="max-width:150px">{{ user.display_name }}</div>
+        <div style="color:var(--ez-text-muted)">{{ user.get_role_display }}</div>
+      </div>
+    </div>
+  </div>
+</aside>

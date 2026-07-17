@@ -1,0 +1,54 @@
+{% comment %}Shared report filter bar. Set hide_* flags to trim fields.{% endcomment %}
+<div class="card mb-3">
+  <div class="card-body py-3 filter-bar">
+    <form method="get" class="row g-2">
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">From</label>
+        <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">To</label>
+        <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control">
+      </div>
+      {% if not hide_staff and is_full %}
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">Staff</label>
+        <select name="staff" class="form-select">
+          <option value="">All staff</option>
+          {% for s in staff_users %}<option value="{{ s.pk }}" {% if filters.staff == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.display_name }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if not hide_category %}
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">Category</label>
+        <select name="category" class="form-select">
+          <option value="">All categories</option>
+          {% for c in categories %}<option value="{{ c.pk }}" {% if filters.category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if not hide_status %}
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">Status</label>
+        <select name="status" class="form-select">
+          <option value="">All statuses</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if not hide_priority %}
+      <div class="col-6 col-md-1">
+        <label class="form-label mb-1">Priority</label>
+        <select name="priority" class="form-select">
+          <option value="">All</option>
+          {% for value, label in priorities %}<option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-12 col-md-1 d-flex align-items-end gap-1">
+        <button class="btn btn-primary flex-fill" type="submit" title="Apply"><i class="bi bi-funnel"></i></button>
+      </div>
+    </form>
+  </div>
+</div>

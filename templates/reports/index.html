@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Reports</h1>
+    <div class="sub">Operational analytics computed from live records — every report exports to CSV</div>
+  </div>
+</div>
+
+<div class="row g-3">
+  {% for slug, name, description, _ in reports %}
+  <div class="col-md-6 col-xl-4">
+    <a href="{% url 'reports:index' %}{{ slug }}/" class="card d-block h-100" style="color:inherit">
+      <div class="card-body d-flex gap-3">
+        <div class="stat-icon tint-{% cycle 'primary' 'info' 'purple' 'warning' 'success' 'danger' %}">
+          <i class="bi bi-{% cycle 'pie-chart' 'tags' 'flag' 'alarm' 'people' 'trophy' 'stopwatch' 'calendar-check' 'shield-check' %}"></i>
+        </div>
+        <div>
+          <div class="fw-semibold">{{ name }}</div>
+          <div class="small mt-1" style="color:var(--ez-text-muted)">{{ description }}</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

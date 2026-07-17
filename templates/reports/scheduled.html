@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "reports/_header.html" %}
+{% include "reports/_filter_bar.html" with hide_staff=1 hide_category=1 hide_status=1 hide_priority=1 %}
+
+<div class="card">
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Scheduled task</th><th>Frequency</th><th>Occurrences</th><th>Completed</th><th>Missed</th><th>Pending</th><th>Completion rate</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><a class="row-link" href="{% url 'scheduling:task_detail' r.id %}">{{ r.name }}</a></td>
+          <td>{{ r.frequency|capfirst }}</td>
+          <td class="fw-num">{{ r.total }}</td>
+          <td class="fw-num text-success">{{ r.completed }}</td>
+          <td class="fw-num">{% if r.missed %}<span class="chip chip-danger">{{ r.missed }}</span>{% else %}0{% endif %}</td>
+          <td class="fw-num">{{ r.pending }}</td>
+          <td>
+            {% if r.completion_rate is not None %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-fill" style="max-width:160px">
+                <div class="progress-bar {% if r.completion_rate < 60 %}bg-danger{% elif r.completion_rate < 85 %}bg-warning{% else %}bg-success{% endif %}" style="width:{{ r.completion_rate }}%"></div>
+              </div>
+              <span class="small fw-num">{{ r.completion_rate }}%</span>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-calendar-check"></i>
+    <div class="h6">No occurrences in range</div>
+    <p class="mb-0">Scheduled task activity will appear once the scheduler runs.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

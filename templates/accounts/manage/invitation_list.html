@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Invitations{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Invitations</h1>
+    <div class="sub">Invite-only registration — send, resend or cancel invitations</div>
+  </div>
+  <div class="actions">
+    <a href="{% url 'accounts:manage_invite' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i> Invite user</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if invitations %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Email</th><th>Role</th><th>Department</th><th>Invited by</th><th>Expires</th><th>Status</th><th class="text-end">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for inv in invitations %}
+        <tr>
+          <td class="fw-semibold">{{ inv.email }}</td>
+          <td>{{ inv.get_role_display }}</td>
+          <td>{{ inv.department.name|default:"—" }}</td>
+          <td>{{ inv.invited_by.display_name|default:"—" }}</td>
+          <td class="fw-num">{{ inv.expires_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            {% if inv.status == "PENDING" %}<span class="chip chip-info">Pending</span>
+            {% elif inv.status == "ACCEPTED" %}<span class="chip chip-success">Accepted</span>
+            {% elif inv.status == "EXPIRED" %}<span class="chip chip-warning">Expired</span>
+            {% else %}<span class="chip chip-dark">Cancelled</span>{% endif %}
+          </td>
+          <td class="text-end">
+            {% if inv.status == "PENDING" or inv.status == "EXPIRED" %}
+              {% if not inv.cancelled_at %}
+              <form method="post" action="{% url 'accounts:manage_invitation_resend' inv.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost btn-sm py-1 px-2" title="Resend (renews expiry)"><i class="bi bi-arrow-repeat"></i></button>
+              </form>
+              <form method="post" action="{% url 'accounts:manage_invitation_cancel' inv.pk %}" class="d-inline"
+                    data-confirm="Cancel the invitation to {{ inv.email }}?">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost btn-sm py-1 px-2" title="Cancel"><i class="bi bi-x-lg text-danger"></i></button>
+              </form>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-envelope-open"></i>
+    <div class="h6">No invitations yet</div>
+    <p class="mb-2">Invite your first team member to get started.</p>
+    <a href="{% url 'accounts:manage_invite' %}" class="btn btn-primary btn-sm">Invite user</a>
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

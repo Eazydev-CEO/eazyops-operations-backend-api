@@ -1,0 +1,36 @@
+{% load static %}<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>{% block title %}Dashboard{% endblock %} · {{ SITE_NAME }}</title>
+  <script src="{% static 'js/theme-init.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div id="toast-stack" aria-live="polite"></div>
+{% if messages %}
+<script type="application/json" id="dj-messages">[{% for m in messages %}{"level":"{{ m.tags|escapejs }}","text":"{{ m|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+{% endif %}
+
+<div class="ez-layout">
+  {% include "partials/sidebar.html" %}
+  <div class="ez-backdrop" id="sidebar-backdrop"></div>
+  <div class="ez-main">
+    {% include "partials/topbar.html" %}
+    <main class="ez-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="{% static 'vendor/jquery.min.js' %}"></script>
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load static ui_extras %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+{{ data|json_script:"dashboard-data" }}
+
+<div class="page-header">
+  <div>
+    <h1>Operations dashboard</h1>
+    <div class="sub">
+      {% if data.scope == "organisation" %}Organisation-wide overview{% else %}Overview of your work{% endif %}
+      · last <span data-range-label>{{ range }}</span> days
+    </div>
+  </div>
+  <div class="actions">
+    <select id="range-select" class="form-select form-select-sm" style="width:auto" aria-label="Date range">
+      <option value="7" {% if range == 7 %}selected{% endif %}>Last 7 days</option>
+      <option value="30" {% if range == 30 %}selected{% endif %}>Last 30 days</option>
+      <option value="90" {% if range == 90 %}selected{% endif %}>Last 90 days</option>
+      <option value="180" {% if range == 180 %}selected{% endif %}>Last 180 days</option>
+    </select>
+  </div>
+</div>
+
+<div id="dashboard-widgets">
+  <!-- Stat cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xxl-2">
+      <div class="card stat-card">
+        <div class="stat-icon tint-primary"><i class="bi bi-briefcase"></i></div>
+        <div><div class="stat-value" data-stat="total_jobs">{{ data.stats.total_jobs }}</div><div class="stat-label">Total jobs</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xxl-2">
+      <div class="card stat-card">
+        <div class="stat-icon tint-info"><i class="bi bi-folder2-open"></i></div>
+        <div><div class="stat-value" data-stat="open_jobs">{{ data.stats.open_jobs }}</div><div class="stat-label">Open</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xxl-2">
+      <div class="card stat-card">
+        <div class="stat-icon tint-secondary"><i class="bi bi-person-check"></i></div>
+        <div><div class="stat-value" data-stat="assigned_jobs">{{ data.stats.assigned_jobs }}</div><div class="stat-label">Assigned</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xxl-2">
+      <div class="card stat-card">
+        <div class="stat-icon tint-warning"><i class="bi bi-play-circle"></i></div>
+        <div><div class="stat-value" data-stat="in_progress_jobs">{{ data.stats.in_progress_jobs }}</div><div class="stat-label">In progress</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xxl-2">
+      <div class="card stat-card">
+        <div class="stat-icon tint-danger"><i class="bi bi-alarm"></i></div>
+        <div><div class="stat-value" data-stat="overdue_jobs">{{ data.stats.overdue_jobs }}</div><div class="stat-label">Overdue</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xxl-2">
+      <div class="card stat-card">
+        <div class="stat-icon tint-success"><i class="bi bi-check2-circle"></i></div>
+        <div><div class="stat-value" data-stat="completed_recent">{{ data.stats.completed_recent }}</div><div class="stat-label">Completed</div></div>
+      </div>
+    </div>
+  </div>
+
+  {% if data.failed_tasks or data.missed_occurrences_7d %}
+  <div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div>
+      {% if data.failed_tasks %}<strong>{{ data.failed_tasks|length }}</strong> scheduled task{{ data.failed_tasks|length|pluralize }} failing.{% endif %}
+      {% if data.missed_occurrences_7d %}<strong>{{ data.missed_occurrences_7d }}</strong> occurrence{{ data.missed_occurrences_7d|pluralize }} missed in the last 7 days.{% endif %}
+      <a href="{% url 'scheduling:runs' %}" class="alert-link ms-1">Review the scheduler →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Charts row -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-pie-chart"></i> Jobs by status</div>
+        <div class="card-body"><div class="chart-box"><canvas id="chart-status" aria-label="Jobs by status chart" role="img"></canvas></div></div>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-graph-up"></i> Weekly trend (created vs completed)</div>
+        <div class="card-body"><div class="chart-box"><canvas id="chart-trend" aria-label="Weekly completion trend chart" role="img"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-bar-chart"></i> Jobs by priority</div>
+        <div class="card-body"><div class="chart-box-sm"><canvas id="chart-priority" aria-label="Jobs by priority chart" role="img"></canvas></div></div>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header">
+          <i class="bi bi-calendar-week"></i>
+          {% if data.scope == "organisation" %}Upcoming scheduled tasks{% else %}My upcoming tasks{% endif %}
+          <a class="ms-auto small" href="{% if data.scope == 'organisation' %}{% url 'scheduling:task_list' %}{% else %}{% url 'scheduling:my_tasks' %}{% endif %}">View all</a>
+        </div>
+        <div class="card-body p-0">
+          {% if data.upcoming_tasks %}
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Task</th><th>When</th><th></th></tr></thead>
+              <tbody>
+                {% for t in data.upcoming_tasks %}
+                <tr>
+                  <td class="fw-semibold">{{ t.name }}</td>
+                  <td class="fw-num">{{ t.scheduled_for }}</td>
+                  <td>{% if t.overdue %}<span class="chip chip-danger">Due</span>{% else %}<span class="chip chip-info">Scheduled</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="empty-state py-4">
+            <i class="bi bi-calendar-x"></i>
+            <div class="h6">Nothing scheduled</div>
+            <p class="mb-0 small">Upcoming scheduled tasks will appear here.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    {% if data.staff_workload %}
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-people"></i> Staff workload
+          <a class="ms-auto small" href="{% url 'reports:workload' %}">Full report</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Staff</th><th>Active</th><th>Urgent</th><th>Tasks</th></tr></thead>
+              <tbody>
+                {% for s in data.staff_workload %}
+                <tr>
+                  <td class="fw-semibold">{{ s.name }}</td>
+                  <td class="fw-num">{{ s.active_jobs }}</td>
+                  <td class="fw-num">{% if s.urgent_jobs %}<span class="chip chip-danger">{{ s.urgent_jobs }}</span>{% else %}0{% endif %}</td>
+                  <td class="fw-num">{{ s.pending_tasks }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-bell"></i> Recent notifications
+          <a class="ms-auto small" href="{% url 'notifications:list' %}">View all</a>
+        </div>
+        <div class="card-body p-0">
+          {% if data.recent_notifications %}
+          <div class="notif-list">
+            {% for n in data.recent_notifications %}
+            <a class="notif-item d-block {% if not n.is_read %}unread{% endif %}" href="{{ n.url|default:'#' }}">
+              <div class="flex-grow-1">
+                <div class="title">{{ n.title }}</div>
+                <div class="meta">{{ n.at }}</div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state py-4">
+            <i class="bi bi-bell-slash"></i>
+            <div class="h6">No notifications</div>
+            <p class="mb-0 small">You're all caught up.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if data.recent_audits %}
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-shield-check"></i> Recent audit activity
+          <a class="ms-auto small" href="{% url 'audits:list' %}">Open audit trail</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Object</th></tr></thead>
+              <tbody>
+                {% for a in data.recent_audits %}
+                <tr>
+                  <td class="fw-num">{{ a.at }}</td>
+                  <td>{{ a.actor }}</td>
+                  <td><span class="tag-chip">{{ a.action }}</span></td>
+                  <td class="text-truncate" style="max-width:280px">{{ a.object }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

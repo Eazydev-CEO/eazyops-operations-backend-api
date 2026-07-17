@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load ui_extras %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Users</h1>
+    <div class="sub">{{ page_obj.paginator.count }} account{{ page_obj.paginator.count|pluralize }}</div>
+  </div>
+  {% if nav_can.users_manage %}
+  <div class="actions">
+    <a href="{% url 'accounts:manage_invitations' %}" class="btn btn-ghost btn-sm"><i class="bi bi-envelope me-1"></i> Invitations</a>
+    <a href="{% url 'accounts:manage_invite' %}" class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i> Invite user</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-3 filter-bar">
+    <form method="get" class="row g-2 js-auto-submit">
+      <div class="col-12 col-md-4">
+        <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="Search name, email, title…" aria-label="Search users">
+      </div>
+      <div class="col-6 col-md-2">
+        <select name="role" class="form-select" aria-label="Filter by role">
+          <option value="">All roles</option>
+          {% for value, label in roles %}<option value="{{ value }}" {% if filters.role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <select name="department" class="form-select" aria-label="Filter by department">
+          <option value="">All departments</option>
+          {% for d in departments %}<option value="{{ d.pk }}" {% if filters.department == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <select name="status" class="form-select" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          <option value="active" {% if filters.status == "active" %}selected{% endif %}>Active</option>
+          <option value="inactive" {% if filters.status == "inactive" %}selected{% endif %}>Deactivated</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2 d-grid">
+        <button class="btn btn-ghost" type="submit"><i class="bi bi-funnel me-1"></i> Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  {% if users %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>User</th><th>Role</th><th>Department</th><th>Title</th>
+          <th>Status</th><th>Last activity</th><th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="ez-avatar" style="width:30px;height:30px;font-size:.7rem">{% if u.photo %}<img src="{{ u.photo.url }}" alt="">{% else %}{{ u|initials }}{% endif %}</span>
+              <div>
+                <div class="fw-semibold">{{ u.display_name }}</div>
+                <div class="small" style="color:var(--ez-text-muted)">{{ u.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="chip chip-{% if u.role == 'SUPER_ADMIN' %}danger{% elif u.role == 'MANAGER' %}primary{% elif u.role == 'STAFF' %}info{% else %}secondary{% endif %}">{{ u.get_role_display }}</span></td>
+          <td>{{ u.department.name|default:"—" }}</td>
+          <td>{{ u.job_title|default:"—" }}</td>
+          <td>{% if u.is_active %}<span class="chip chip-success">Active</span>{% else %}<span class="chip chip-dark">Deactivated</span>{% endif %}</td>
+          <td class="fw-num">{{ u.last_activity_at|date:"Y-m-d H:i"|default:"—" }}</td>
+          <td class="text-end">
+            {% if nav_can.users_manage %}
+            <a href="{% url 'accounts:manage_user_edit' u.pk %}" class="btn btn-ghost btn-sm py-1 px-2" title="Edit"><i class="bi bi-pencil"></i></a>
+            {% if u.pk != user.pk %}
+            <form method="post" action="{% url 'accounts:manage_user_set_active' u.pk %}" class="d-inline"
+                  data-confirm="{% if u.is_active %}Deactivate {{ u.display_name }}? They will no longer be able to sign in.{% else %}Reactivate {{ u.display_name }}?{% endif %}">
+              {% csrf_token %}
+              <input type="hidden" name="active" value="{% if u.is_active %}0{% else %}1{% endif %}">
+              <button type="submit" class="btn btn-ghost btn-sm py-1 px-2" title="{% if u.is_active %}Deactivate{% else %}Reactivate{% endif %}">
+                <i class="bi {% if u.is_active %}bi-person-dash text-danger{% else %}bi-person-check text-success{% endif %}"></i>
+              </button>
+            </form>
+            {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-people"></i>
+    <div class="h6">No users found</div>
+    <p class="mb-0">Try changing the filters above.</p>
+  </div>
+  {% endif %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

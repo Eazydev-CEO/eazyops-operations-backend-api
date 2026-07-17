@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}System health{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>System health</h1>
+    <div class="sub">Environment, database, scheduler and volume summary</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card">
+      <div class="stat-icon {% if health.db_ok %}tint-success{% else %}tint-danger{% endif %}"><i class="bi bi-database"></i></div>
+      <div><div class="stat-value">{% if health.db_ok %}OK{% else %}DOWN{% endif %}</div><div class="stat-label">Database ({{ health.db_engine }})</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card">
+      <div class="stat-icon {% if health.scheduler_stale %}tint-warning{% else %}tint-success{% endif %}"><i class="bi bi-cpu"></i></div>
+      <div>
+        <div class="stat-value">{% if health.scheduler_age_minutes is not None %}{{ health.scheduler_age_minutes }}m{% else %}never{% endif %}</div>
+        <div class="stat-label">Since last scheduler run</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card">
+      <div class="stat-icon {% if health.failed_tasks %}tint-danger{% else %}tint-success{% endif %}"><i class="bi bi-bug"></i></div>
+      <div><div class="stat-value">{{ health.failed_tasks }}</div><div class="stat-label">Failing scheduled tasks</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card">
+      <div class="stat-icon {% if health.missed_7d %}tint-warning{% else %}tint-success{% endif %}"><i class="bi bi-hourglass-bottom"></i></div>
+      <div><div class="stat-value">{{ health.missed_7d }}</div><div class="stat-label">Missed occurrences (7d)</div></div>
+    </div>
+  </div>
+</div>
+
+{% if health.scheduler_stale %}
+<div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <div>The scheduler has not run in over an hour. Confirm the cron entry
+    <code>python manage.py run_scheduler</code> is active, or trigger a manual run from the
+    <a href="{% url 'scheduling:runs' %}" class="alert-link">scheduler monitor</a>.</div>
+</div>
+{% endif %}
+{% if health.debug %}
+<div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+  <i class="bi bi-shield-exclamation"></i>
+  <div><strong>DEBUG is enabled.</strong> Never run production with DEBUG=True.</div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-motherboard"></i> Environment</div>
+      <div class="card-body">
+        <dl class="kv">
+          <dt>Python</dt><dd class="fw-num">{{ health.python_version }}</dd>
+          <dt>Django</dt><dd class="fw-num">{{ health.django_version }}</dd>
+          <dt>Database</dt><dd>{{ health.db_engine }}{% if health.db_error %} — <span class="text-danger">{{ health.db_error }}</span>{% endif %}</dd>
+          <dt>Email backend</dt><dd>{{ health.email_backend }}</dd>
+          <dt>Debug mode</dt><dd>{% if health.debug %}<span class="chip chip-danger">On</span>{% else %}<span class="chip chip-success">Off</span>{% endif %}</dd>
+          <dt>Pending migrations</dt>
+          <dd>
+            {% if health.pending_migrations %}
+              {% for m in health.pending_migrations %}<span class="tag-chip me-1">{{ m }}</span>{% endfor %}
+            {% else %}<span class="chip chip-success">None</span>{% endif %}
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-collection"></i> Volumes</div>
+      <div class="card-body">
+        <dl class="kv">
+          <dt>Users</dt><dd class="fw-num">{{ health.counts.active_users }} active / {{ health.counts.users }} total</dd>
+          <dt>Jobs</dt><dd class="fw-num">{{ health.counts.active_jobs }} active / {{ health.counts.jobs }} total</dd>
+          <dt>Scheduled tasks</dt><dd class="fw-num">{{ health.counts.scheduled_tasks }}</dd>
+          <dt>Notifications (30d)</dt><dd class="fw-num">{{ health.counts.notifications_30d }}</dd>
+          <dt>Last scheduler run</dt>
+          <dd>
+            {% if health.last_scheduler_run %}
+              <a href="{% url 'scheduling:run_detail' health.last_scheduler_run.pk %}">#{{ health.last_scheduler_run.pk }}</a>
+              · {{ health.last_scheduler_run.started_at|date:"Y-m-d H:i" }} · {{ health.last_scheduler_run.get_status_display }}
+            {% else %}never{% endif %}
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

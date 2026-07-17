@@ -1,0 +1,14 @@
+# EazyOps — production dependencies
+Django>=5.2,<6.0
+djangorestframework>=3.16
+djangorestframework-simplejwt>=5.5
+drf-spectacular>=0.28
+drf-spectacular-sidecar>=2024.7.1
+django-filter>=25.1
+python-dotenv>=1.1
+Pillow>=11.0
+whitenoise>=6.9
+
+# PostgreSQL driver (production). Safe to install everywhere; SQLite is used
+# automatically in development unless DATABASE_URL points at PostgreSQL.
+# psycopg[binary]>=3.2   # uncomment (or pip install) when deploying to PostgreSQL

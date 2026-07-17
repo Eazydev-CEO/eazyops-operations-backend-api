@@ -1,0 +1,10 @@
+{% extends "base_auth.html" %}
+{% block title %}Server error{% endblock %}
+{% block content %}
+<div class="error-hero py-4">
+  <div class="code">500</div>
+  <h1 class="h5 mt-3 mb-2">Something went wrong</h1>
+  <p style="color:var(--ez-text-muted)">An unexpected error occurred. The team has been notified — please try again shortly.</p>
+  <a href="/" class="btn btn-primary mt-2"><i class="bi bi-arrow-clockwise me-1"></i> Try again</a>
+</div>
+{% endblock %}

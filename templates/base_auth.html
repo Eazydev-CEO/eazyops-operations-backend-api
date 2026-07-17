@@ -1,0 +1,40 @@
+{% load static %}<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>{% block title %}Sign in{% endblock %} · {{ SITE_NAME }}</title>
+  <script src="{% static 'js/theme-init.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div id="toast-stack" aria-live="polite"></div>
+{% if messages %}
+<script type="application/json" id="dj-messages">[{% for m in messages %}{"level":"{{ m.tags|escapejs }}","text":"{{ m|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+{% endif %}
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="ez-brand-logo">E</div>
+      <div class="name">Eazy<span>Ops</span></div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+    <p class="text-center mt-3 mb-0" style="color: var(--ez-text-muted); font-size:.78rem">
+      {{ SITE_NAME }} — internal operations platform
+    </p>
+  </div>
+</div>
+
+<script src="{% static 'vendor/jquery.min.js' %}"></script>
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

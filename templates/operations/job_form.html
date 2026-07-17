@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{% if job %}Edit {{ job.number }}{% else %}New job{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{% if job %}Edit {{ job.number }}{% else %}Create a job{% endif %}</h1>
+    <div class="sub">{% if job %}{{ job.title }}{% else %}A new work order for your operations team{% endif %}</div>
+  </div>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="row g-3">
+    <div class="col-xl-8">
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-card-text"></i> Job details</div>
+        <div class="card-body">
+          {% include "partials/form_field.html" with field=form.title %}
+          {% include "partials/form_field.html" with field=form.description %}
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.category %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.priority %}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.department %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.manager %}</div>
+          </div>
+          {% include "partials/form_field.html" with field=form.tags_raw %}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><i class="bi bi-cash-stack"></i> Dates &amp; costs</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.start_date %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.due_date %}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.estimated_cost %}</div>
+            <div class="col-md-6">{% include "partials/form_field.html" with field=form.actual_cost %}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-people"></i> {% if job %}Workflow{% else %}Assignment &amp; publish{% endif %}</div>
+        <div class="card-body">
+          {% if not job %}
+            {% include "partials/form_field.html" with field=form.staff %}
+            {% include "partials/form_field.html" with field=form.initial_status %}
+            <div class="form-text mb-2">Draft jobs stay hidden from viewers until published. Assigning staff to an open job moves it to Assigned automatically.</div>
+          {% else %}
+            <p class="small mb-1" style="color:var(--ez-text-muted)">Status and assignments are managed from the job page — this form edits metadata only.</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> {% if job %}Save changes{% else %}Create job{% endif %}</button>
+        <a href="{% if job %}{{ job.get_absolute_url }}{% else %}{% url 'operations:job_list' %}{% endif %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
